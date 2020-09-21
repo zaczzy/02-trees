@@ -100,15 +100,13 @@ testIntersperse =
 
 foldl1 :: (b -> a -> b) -> b -> [a] -> b
 foldl1 _ z [] = z
-foldl1 f z (x : xs) =
-  let z' = z `f` x
-   in foldl1 f z' xs
+foldl1 f z (x : xs) = foldl1 f (z `f` x) xs
 
 foldl :: (b -> a -> b) -> b -> [a] -> b
 foldl f z xs = undefined
 
 testFoldl :: Test
-testFoldl = foldl (++) "" ["1", "2", "3"] ~=? "abc"
+testFoldl = foldl (++) "x" ["1", "2", "3"] ~=? "x123"
 
 runTests :: IO ()
 runTests = do
