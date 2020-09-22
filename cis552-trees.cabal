@@ -15,6 +15,7 @@ library
   exposed-modules:     Datatypes
                        Foldr
                        Kata20
+                       TreeFolds
   build-depends:       base >=4.13 && <4.14
                        , HUnit >= 1.6
                        , dlist
