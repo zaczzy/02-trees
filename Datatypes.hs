@@ -6,6 +6,7 @@ fulltitle: User-defined datatypes
 
 module Datatypes where
 
+import Foreign.C.Error (eMULTIHOP)
 import Test.HUnit
 import Prelude hiding (Either, Just, Left, Maybe, Nothing, Right)
 
@@ -271,7 +272,7 @@ Rewrite this function using selectors `x` and `y`:
 -}
 
 distFromOrigin' :: Point -> Double
-distFromOrigin' p = undefined
+distFromOrigin' p = sqrt (x p * x p + y p * y p)
 
 {-
 Which version is easier to read? Opinions differ.
@@ -287,6 +288,7 @@ Things to watch out for with records in Haskell:
 
           map x points
 
+-- TODO: what if common component between data types? i.e. inheritance?
  * Record selectors must be unique within a module. If `Point` has an `x`
    component, then no other datatype in that module can use `x`.
 
@@ -314,6 +316,9 @@ point3 = point1 {x = 2.0}
 
 -- point3 is a Point with x component equal to 2.0,
 -- and all others (which is only y here) the same as point1
+
+-- TODO: note, this is supposed to replace modification. what if many many
+-- modifications need to happen? How expensive is this operation?
 
 {-
  * Haskell's record system is far from perfect. It's strange that records must
@@ -363,7 +368,8 @@ of `head` is not partial like the one for regular lists.)
 -- >>> safeHead oneTwoThree
 -- 1
 safeHead :: IntListNE -> Int
-safeHead = undefined
+safeHead (ISingle i) = i
+safeHead (ICons h _) = h
 
 {-
 We can define functions by recursion on `IntListNE`s too, of course. Write a function
@@ -373,7 +379,8 @@ to calculate the sum of a non-empty list of integers.
 -- >>> sumOfIntListNE oneTwoThree
 -- 6
 sumOfIntListNE :: IntListNE -> Int
-sumOfIntListNE = undefined
+sumOfIntListNE (ISingle i) = i
+sumOfIntListNE (ICons x xs) = x + sumOfIntListNE xs
 
 {-
 Polymorphic Datatypes
@@ -410,7 +417,7 @@ justTrue :: Maybe Bool
 justTrue = Just True
 
 justThree :: Maybe Int
-justThree = undefined
+justThree = Just 3
 
 {-
 A number of other polymorphic datatypes appear in the standard
@@ -477,7 +484,9 @@ We can write simple functions on trees by recursion:
 -- >>> treePlus (Branch 2 Empty Empty) 3
 -- Branch 5 Empty Empty
 treePlus :: Tree Int -> Int -> Tree Int
-treePlus = undefined
+treePlus Empty _ = Empty
+treePlus (Branch v left right) inc =
+  Branch (v + inc) (treePlus left inc) (treePlus right inc)
 
 {-
 We can accumulate all of the elements in a tree into a list:
@@ -497,7 +506,8 @@ infixOrder (Branch x l r) = infixOrder l ++ [x] ++ infixOrder r
 -- [5,2,1,4,9,7]
 
 prefixOrder :: Tree a -> [a]
-prefixOrder = undefined
+prefixOrder Empty = []
+prefixOrder (Branch x l r) = x : prefixOrder l ++ prefixOrder r
 
 {-
 (NOTE: This is a simple way of defining a tree walk in Haskell, but it is not
@@ -508,6 +518,21 @@ number of nodes in the tree. Why?  Can you think of a way to rewrite
 But, of course, what we should really do is reimplement our
 higher-order patterns for trees!
 -}
+-- >>> infixOrder' exTree
+-- [1,2,4,5,9,7]
+infixOrder' :: Tree a -> [a]
+infixOrder' = infixOrder'Aux []
+  where
+    infixOrder'Aux xs Empty = xs
+    infixOrder'Aux xs (Branch x l r) = infixOrder'Aux (x : infixOrder'Aux xs r) l
+
+-- >>> prefixOrder' exTree
+-- [5,2,1,4,9,7]
+prefixOrder' :: Tree a -> [a]
+prefixOrder' = prefixOrder'Aux []
+  where
+    prefixOrder'Aux xs Empty = xs
+    prefixOrder'Aux xs (Branch x l r) = x : prefixOrder'Aux (prefixOrder'Aux xs r) l
 
 treeMap :: (a -> b) -> Tree a -> Tree b
 treeMap f Empty = Empty
