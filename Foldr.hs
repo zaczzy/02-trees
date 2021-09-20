@@ -14,6 +14,7 @@ partner (they are ordered in terms of difficulty).
 
 module Foldr where
 
+import Data.Maybe
 import Test.HUnit
 import Prelude hiding (all, filter, foldl, foldl1, last, length, map, reverse)
 
@@ -109,7 +110,7 @@ Now implement using foldr
 -- >>> all (>0) ([1 .. 20] :: [Int])
 -- True
 all :: (a -> Bool) -> [a] -> Bool
-all p = undefined
+all p = foldr (\x -> (p x &&)) True
 
 testAll :: Test
 testAll =
@@ -147,7 +148,10 @@ Now implement using foldr
 -- >>> last ""
 -- Nothing
 last :: [a] -> Maybe a
-last = undefined
+last = foldr (\x base -> if isNothing base then Just x else base) Nothing
+
+-- last = foldr (\x base -> if null base then Just x else base) Nothing
+-- use pattern matching in the lambda func
 
 {-
 >
@@ -173,7 +177,7 @@ of the first list for which the input function returns `True`.
 -}
 
 filter :: (a -> Bool) -> [a] -> [a]
-filter p = undefined
+filter p = foldr (\x -> if p x then (x :) else id) []
 
 testFilter :: Test
 testFilter =
@@ -204,8 +208,27 @@ reverse1 l = aux l []
 Now rewrite this function using 'foldr'
 -}
 
+-- Nick: pull out lambdas and give them names (where)
+
+-- Harry: write in a where clause... globally declare
+-- nested type inference
+-- extract everything and give it type that you think it has.
+-- think type first then logic
 reverse :: [a] -> [a]
-reverse l = undefined
+reverse l = foldr (\x f base -> f (x : base)) id l []
+
+identity :: [a] -> [a]
+identity l = foldr (\x f base -> x : f base) (const []) l []
+
+empty = id
+
+app = (.)
+
+singleton x = (x :)
+
+toList xs = xs []
+
+reverse' = toList (foldr (\x ys -> ys `app` singleton x) empty)
 
 testReverse :: Test
 testReverse =
